@@ -1,0 +1,12 @@
+import React from 'react';
+
+const App = () => {
+  return (
+    <div style={{ padding: '20px', background: 'white', height: '100vh' }}>
+      <h1 style={{ color: 'indigo' }}>CreatorBridge Debug Mode</h1>
+      <p>If you can see this, the React app is mounting correctly.</p>
+    </div>
+  );
+};
+
+export default App;

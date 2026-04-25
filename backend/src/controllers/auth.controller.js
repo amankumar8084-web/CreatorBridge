@@ -1,12 +1,13 @@
 const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require("uuid");
 const User = require('../models/User.model');
 const Follow = require('../models/Follow.model'); 
 const AppError = require('../utils/AppError');
 
 
 //  Generate token
-const signToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+const signToken = (userId, sessionId) => {
+  return jwt.sign({ userId, sessionId }, process.env.JWT_SECRET, {
     expiresIn: '7d'
   });
 };
@@ -22,13 +23,15 @@ exports.register = async (req, res, next) => {
       return next(new AppError('Email already registered', 400));
     }
 
+    const newSessionId = uuidv4();
     const user = await User.create({
       email,
       password,
-      name
+      name,
+      sessionId: newSessionId
     });
 
-    const token = signToken(user._id);
+    const token = signToken(user._id, newSessionId);
 
     res.status(201).json({
       status: 'success',
@@ -59,7 +62,14 @@ exports.login = async (req, res, next) => {
       return next(new AppError('Invalid email or password', 401));
     }
 
-    const token = signToken(user._id);
+    // 🔁 Generate new session ID
+    const newSessionId = uuidv4();
+
+    // ❗ Overwrite previous session
+    user.sessionId = newSessionId;
+    await user.save();
+
+    const token = signToken(user._id, newSessionId);
 
     res.status(200).json({
       status: 'success',
@@ -67,7 +77,7 @@ exports.login = async (req, res, next) => {
       user: {
         id: user._id,
         email: user.email,
-       name: user.name || '',
+        name: user.name || '',
         niche: user.niche,
         avatar: user.avatar
       }

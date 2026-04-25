@@ -79,11 +79,11 @@ export const AuthProvider = ({ children }) => {
   };
   
   const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-    toast.success('Logged out');
-  };
+  localStorage.removeItem('token');
+  setToken(null);
+  setUser(null);
+  window.location.replace('/login'); 
+};
   
   const updateProfile = async (data) => {
     try {
@@ -114,4 +114,4 @@ export const AuthProvider = ({ children }) => {
       {!loading && children}
     </AuthContext.Provider>
   );
-};
+};

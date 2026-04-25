@@ -28,7 +28,7 @@ const Login = () => {
         <div>
           <div className="w-16 h-16 bg-gradient-brand rounded-2xl mx-auto mb-4"></div>
           <h2 className="text-center text-3xl font-extrabold text-gray-900">
-            Welcome Back
+            Welcome
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Sign in to continue your creator journey

@@ -1,10 +1,10 @@
+require('dotenv').config();
 const app = require('./src/app');
 const http = require('http');
 const socketIO = require('socket.io');
 const connectDB = require('./src/config/database');
 const { initRedis } = require('./src/config/redis');
 const { initSocket } = require('./src/services/websocket.service');
-require('dotenv').config();
 
 const server = http.createServer(app);
 const io = socketIO(server, {

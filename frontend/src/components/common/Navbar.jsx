@@ -18,11 +18,13 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-cyan-500 rounded-lg"></div>
-            <span className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent">
-              CreatorBridge
-            </span>
+          {/* Logo Section - Image logo replacing text */}
+          <Link to="/" className="flex items-center space-x-2 group">
+            <img 
+              src="/logoCB.jpeg"
+              alt="CREATOR BRIDGE - CONNECT.LEARN.GROW"
+              className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
+            />
           </Link>
           
           <div className="hidden md:flex items-center space-x-6">

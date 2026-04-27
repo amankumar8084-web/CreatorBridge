@@ -6,9 +6,11 @@ exports.verifyChannel = async (req, res, next) => {
   try {
     const { channelId, channelUrl } = req.body;
     
-    let channelIdentifier = channelId;
-    if (channelUrl) {
-      channelIdentifier = youtubeService.extractChannelId(channelUrl) || channelIdentifier;
+    let channelIdentifier = channelId || channelUrl;
+    
+    // If the identifier looks like a URL, try to extract the ID/Handle
+    if (channelIdentifier && (channelIdentifier.includes('youtube.com') || channelIdentifier.includes('youtu.be'))) {
+      channelIdentifier = youtubeService.extractChannelId(channelIdentifier) || channelIdentifier;
     }
     
     if (!channelIdentifier) {

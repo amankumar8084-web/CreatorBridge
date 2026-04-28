@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import chatService from '../services/chat.service';
+import userService from '../services/user.service';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
@@ -10,19 +11,35 @@ import Loader from '../components/common/Loader';
 const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState('');
-  const [chats, setChats] = useState([]);
+  const [connections, setConnections] = useState([]);
   const messagesEndRef = useRef(null);
   
   const { user } = useAuth();
+  const currentUserId = user?.id || user?._id;
   const { socket, joinChat, sendMessage, isConnected } = useSocket();
   const queryClient = useQueryClient();
   
-  // Fetch chats
-  const { data: chatsData, isLoading: chatsLoading } = useQuery(
-    'chats',
-    () => chatService.getChats(),
+  // Fetch current user's profile to get connections
+  const { data: profile, isLoading: profileLoading } = useQuery(
+    ['profile', currentUserId],
+    () => userService.getProfile(currentUserId),
     {
-      onSuccess: (data) => setChats(data)
+      enabled: !!currentUserId,
+      onSuccess: (data) => {
+        // Merge followers and following, remove duplicates
+        const allConnections = [...(data.followers || []), ...(data.following || [])];
+        const uniqueConnections = [];
+        const seenIds = new Set();
+        
+        allConnections.forEach(conn => {
+          if (!seenIds.has(conn._id)) {
+            seenIds.add(conn._id);
+            uniqueConnections.push(conn);
+          }
+        });
+        
+        setConnections(uniqueConnections);
+      }
     }
   );
   
@@ -56,13 +73,11 @@ const Chat = () => {
       if (selectedChat && newMessage.chatId === selectedChat._id) {
         setMessages(prev => [...prev, newMessage]);
       }
-      // Update chats list with latest message
-      queryClient.invalidateQueries('chats');
     };
     
     socket.on('chat:message', handleNewMessage);
     return () => socket.off('chat:message');
-  }, [socket, selectedChat, queryClient]);
+  }, [socket, selectedChat]);
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,8 +90,20 @@ const Chat = () => {
     sendMessage(selectedChat._id, message);
     setMessage('');
   };
+
+  const handleSelectConnection = async (connection) => {
+    try {
+      const dmData = await chatService.createDMRoom(connection._id);
+      setSelectedChat({
+        _id: dmData.roomId,
+        participants: [connection]
+      });
+    } catch (error) {
+      console.error("Error creating DM room:", error);
+    }
+  };
   
-  if (chatsLoading) return <Loader />;
+  if (profileLoading) return <Loader />;
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-8rem)]">
@@ -85,37 +112,42 @@ const Chat = () => {
         <div className="w-full md:w-80 border-r border-gray-200 flex flex-col">
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <h2 className="font-bold text-gray-900 flex items-center gap-2">
-              <HiUsers className="text-indigo-600" /> Messages
+              <HiUsers className="text-indigo-600" /> Connections
             </h2>
+            <p className="text-xs text-gray-500 mt-1">Chat with your followers and following</p>
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            {chats?.map((chat) => {
-              const otherUser = chat.participants.find(p => p._id !== user?.id);
-              return (
-                <div
-                  key={chat._id}
-                  onClick={() => setSelectedChat(chat)}
-                  className={`p-4 cursor-pointer hover:bg-gray-50 transition ${
-                    selectedChat?._id === chat._id ? 'bg-indigo-50' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={otherUser?.avatar || `https://ui-avatars.com/api/?name=${otherUser?.name}&background=4F46E5`}
-                      alt={otherUser?.name}
-                      className="w-10 h-10 rounded-full"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 truncate">{otherUser?.name}</h4>
-                      <p className="text-xs text-gray-500 truncate">
-                        {chat.lastMessage?.content || 'Start a conversation'}
-                      </p>
+            {connections.length > 0 ? (
+              connections.map((conn) => {
+                const isSelected = selectedChat?.participants?.some(p => p._id === conn._id);
+                return (
+                  <div
+                    key={conn._id}
+                    onClick={() => handleSelectConnection(conn)}
+                    className={`p-4 cursor-pointer hover:bg-gray-50 transition ${
+                      isSelected ? 'bg-indigo-50' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={conn.avatar || `https://ui-avatars.com/api/?name=${conn.name}&background=4F46E5`}
+                        alt={conn.name}
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 truncate">{conn.name}</h4>
+                        <p className="text-xs text-gray-500 truncate">{conn.niche}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="p-4 text-center text-gray-500 text-sm">
+                No connections yet. Follow other creators to start chatting!
+              </div>
+            )}
           </div>
         </div>
         
@@ -131,7 +163,7 @@ const Chat = () => {
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900">
-                      {selectedChat.participants.find(p => p._id !== user?.id)?.name}
+                      {selectedChat.participants[0]?.name}
                     </h3>
                     <p className="text-xs text-green-500">{isConnected ? 'Connected' : 'Connecting...'}</p>
                   </div>
@@ -143,11 +175,11 @@ const Chat = () => {
                 {messages?.map((msg) => (
                   <div
                     key={msg._id}
-                    className={`flex ${msg.sender === user?.id ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${msg.sender === currentUserId ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
                       className={`max-w-[70%] p-3 rounded-2xl ${
-                        msg.sender === user?.id
+                        msg.sender === currentUserId
                           ? 'bg-indigo-600 text-white rounded-tr-none'
                           : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
                       }`}

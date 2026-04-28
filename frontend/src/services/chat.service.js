@@ -22,6 +22,11 @@ const chatService = {
     return response.data.data;
   },
 
+  createDMRoom: async (userId) => {
+    const response = await api.post('/chat/dm-room', { userId });
+    return response.data.data;
+  },
+
   markAsRead: async (roomId) => {
     const response = await api.put(`/chat/rooms/${roomId}/read`);
     return response.data.data;

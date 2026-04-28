@@ -15,6 +15,8 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({ name: '', bio: '', niche: '' });
   const [youtubeChannelId, setYoutubeChannelId] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [showConnectionsModal, setShowConnectionsModal] = useState(false);
+  const [connectionsType, setConnectionsType] = useState('followers'); // 'followers' or 'following'
   const queryClient = useQueryClient();
   
   const profileId = id || user?.id || user?._id;
@@ -64,7 +66,8 @@ const Profile = () => {
   if (isLoading) return <Loader />;
   if (!profile) return <div className="text-center py-8">User not found</div>;
   
-  const isFollowing = profile.followers?.some(f => f._id === user?.id);
+  const currentUserId = user?.id || user?._id;
+  const isFollowing = profile.followers?.some(f => (f._id || f) === currentUserId);
   
   const niches = ['Gaming', 'Cooking', 'Tech', 'Education', 'Vlogs', 'Music', 'Fitness', 'Art', 'Other'];
   
@@ -118,11 +121,17 @@ const Profile = () => {
             <p className="text-gray-600 mt-4">{profile.bio || 'No bio yet'}</p>
             
             <div className="flex gap-6 mt-4">
-              <div className="text-center">
+              <div 
+                className="text-center cursor-pointer hover:opacity-80 transition"
+                onClick={() => { setConnectionsType('followers'); setShowConnectionsModal(true); }}
+              >
                 <div className="font-bold text-gray-900">{profile.followers?.length || 0}</div>
                 <div className="text-xs text-gray-500">Followers</div>
               </div>
-              <div className="text-center">
+              <div 
+                className="text-center cursor-pointer hover:opacity-80 transition"
+                onClick={() => { setConnectionsType('following'); setShowConnectionsModal(true); }}
+              >
                 <div className="font-bold text-gray-900">{profile.following?.length || 0}</div>
                 <div className="text-xs text-gray-500">Following</div>
               </div>
@@ -332,6 +341,46 @@ const Profile = () => {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Connections Modal */}
+      {showConnectionsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowConnectionsModal(false)}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-xl max-w-sm w-full max-h-[80vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-lg font-bold capitalize">{connectionsType}</h2>
+              <button onClick={() => setShowConnectionsModal(false)} className="text-gray-500 hover:text-gray-700">
+                &times;
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4">
+              {profile[connectionsType]?.length > 0 ? (
+                <ul className="space-y-4">
+                  {profile[connectionsType].map(userConn => (
+                    <li key={userConn._id} className="flex items-center gap-3">
+                      <img 
+                        src={userConn.avatar || `https://ui-avatars.com/api/?name=${userConn.name}&background=4F46E5`} 
+                        alt={userConn.name}
+                        className="w-10 h-10 rounded-full object-cover" 
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900">{userConn.name}</p>
+                        <p className="text-xs text-gray-500">{userConn.niche}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-center text-gray-500 text-sm">No {connectionsType} found.</p>
+              )}
+            </div>
           </motion.div>
         </div>
       )}

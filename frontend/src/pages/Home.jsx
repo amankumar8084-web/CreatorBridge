@@ -7,15 +7,16 @@ import {
   FaTwitter, FaLinkedinIn, FaYoutube, FaInstagram,
 } from 'react-icons/fa';
 
-/* ─────────────────────────────────────────
-   Stat data shared by ticker + click handler
-───────────────────────────────────────── */
-const STATS = [
-  { icon: HiUsers,       number: '5,000+',  label: 'Active Creators',   color: 'from-indigo-500 to-indigo-600',  toast: '👥 Meet 5,000+ active creators!' },
-  { icon: HiChat,        number: '10,000+', label: 'Posts Shared',       color: 'from-cyan-500 to-cyan-600',      toast: '📝 10,000+ posts and counting!' },
-  { icon: HiVideoCamera, number: '500+',    label: 'Meetings Hosted',    color: 'from-purple-500 to-purple-600',  toast: '🎥 500+ collaborative sessions!' },
-  { icon: HiTrendingUp,  number: '100+',    label: 'Niches Covered',     color: 'from-green-500 to-green-600',    toast: '🌐 100+ niches worldwide!' },
+
+
+// Default fallback data
+const defaultStats = [
+  { icon: HiUsers, number: '5,000+', label: 'Active Creators', color: 'from-indigo-500 to-indigo-600', toast: '👥 Meet 5,000+ active creators!' },
+  { icon: HiChat, number: '10,000+', label: 'Posts Shared', color: 'from-cyan-500 to-cyan-600', toast: '📝 10,000+ posts and counting!' },
+  { icon: HiVideoCamera, number: '500+', label: 'Meetings Hosted', color: 'from-purple-500 to-purple-600', toast: '🎥 500+ collaborative sessions!' },
+  { icon: HiTrendingUp, number: '100+', label: 'Niches Covered', color: 'from-green-500 to-green-600', toast: '🌐 100+ niches worldwide!' },
 ];
+
 
 /* ─────────────────────────────────────────
    Toast component
@@ -38,9 +39,9 @@ const Toast = ({ message, visible }) => (
 /* ─────────────────────────────────────────
    Scrolling Ticker
 ───────────────────────────────────────── */
-const StatTicker = ({ onStatClick }) => {
+const StatTicker = ({ stats, onStatClick }) => {
   // Duplicate 4× so the seamless loop holds even at very wide screens
-  const items = [...STATS, ...STATS, ...STATS, ...STATS];
+  const items = [...stats, ...stats, ...stats, ...stats];
 
   return (
     <div className="relative w-full overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600">
@@ -125,7 +126,7 @@ const Footer = () => {
           {/* Brand column */}
           <div className="md:col-span-1">
             <div className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-3">
-              CreatorHub
+              CreatorBridge
             </div>
             <p className="text-sm text-gray-400 leading-relaxed max-w-[220px]">
               The all-in-one community platform for content creators to connect, grow, and thrive together.
@@ -172,10 +173,7 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-6 text-xs text-gray-500">
-          <span>© {new Date().getFullYear()} CreatorHub. All rights reserved.</span>
-          <span className="bg-indigo-500/15 text-purple-300 border border-indigo-500/30 px-3 py-1 rounded-full text-[11px] font-medium">
-            Trusted by 5,000+ creators worldwide
-          </span>
+          <span>© {new Date().getFullYear()} CreatorBridge. All rights reserved.</span>
         </div>
       </div>
     </footer>
@@ -188,6 +186,7 @@ const Footer = () => {
 const Home = () => {
   const { user } = useAuth();
   const [toast, setToast] = useState({ visible: false, message: '' });
+  const [stats, setStats] = useState(defaultStats);
   const toastTimer = useRef(null);
 
   const showToast = (message) => {
@@ -197,6 +196,32 @@ const Home = () => {
   };
 
   useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        
+        const formatNumber = (num) => {
+          if (num >= 1000) return (num / 1000).toFixed(1) + 'k+';
+          return num.toString() + '+';
+        };
+
+        const realStats = [
+          { icon: HiUsers, number: formatNumber(data.activeCreators || 5000), label: 'Active Creators', color: 'from-indigo-500 to-indigo-600', toast: `👥 Meet ${formatNumber(data.activeCreators || 5000)} active creators!` },
+          { icon: HiChat, number: formatNumber(data.postsShared || 10000), label: 'Posts Shared', color: 'from-cyan-500 to-cyan-600', toast: `📝 ${formatNumber(data.postsShared || 10000)} posts and counting!` },
+          { icon: HiVideoCamera, number: formatNumber(data.meetingsHosted || 500), label: 'Meetings Hosted', color: 'from-purple-500 to-purple-600', toast: `🎥 ${formatNumber(data.meetingsHosted || 500)} collaborative sessions!` },
+          { icon: HiTrendingUp, number: formatNumber(data.nichesCovered || 100), label: 'Niches Covered', color: 'from-green-500 to-green-600', toast: `🌐 ${formatNumber(data.nichesCovered || 100)} niches worldwide!` },
+        ];
+        
+        setStats(realStats);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const features = [
     { icon: HiUsers,       title: 'Community Forum',   description: 'Share struggles, get advice, and learn from peers', iconBg: 'bg-indigo-500', link: '/forum' },
@@ -229,7 +254,8 @@ const Home = () => {
       </div>
 
       {/* ── Scrolling Stats Ticker (full-width, outside max-w container) ── */}
-      <StatTicker onStatClick={showToast} />
+      <StatTicker stats={stats} onStatClick={showToast} />
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Features Grid */}

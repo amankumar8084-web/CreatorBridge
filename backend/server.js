@@ -7,9 +7,15 @@ const { initRedis } = require('./src/config/redis');
 const { initSocket } = require('./src/services/websocket.service');
 
 const server = http.createServer(app);
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://creatorbridge-iota.vercel.app',
+  process.env.CLIENT_URL
+].filter(Boolean);
+
 const io = socketIO(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: allowedOrigins,
     credentials: true
   }
 });

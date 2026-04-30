@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import userService from '../services/user.service';
 import youtubeService from '../services/youtube.service';
@@ -18,6 +18,7 @@ const Profile = () => {
   const [showConnectionsModal, setShowConnectionsModal] = useState(false);
   const [connectionsType, setConnectionsType] = useState('followers'); // 'followers' or 'following'
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   const profileId = id || user?.id || user?._id;
   const isOwnProfile = profileId && (profileId === user?.id || profileId === user?._id);
@@ -104,17 +105,25 @@ const Profile = () => {
                   <HiPencilSquare /> Edit Profile
                 </button>
               ) : (
-                <button
-                  onClick={() => followMutation.mutate()}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                    isFollowing
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'btn-primary'
-                  }`}
-                >
-                  {isFollowing ? <HiCheck /> : <HiUserPlus />}
-                  {isFollowing ? 'Following' : 'Follow'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => followMutation.mutate()}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                      isFollowing
+                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'btn-primary'
+                    }`}
+                  >
+                    {isFollowing ? <HiCheck /> : <HiUserPlus />}
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                  <button
+                    onClick={() => navigate('/chat', { state: { requestUser: profile } })}
+                    className="btn-secondary px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg transition"
+                  >
+                    Message
+                  </button>
+                </div>
               )}
             </div>
             

@@ -9,4 +9,8 @@ router.get('/rooms', protect, chatController.getChatRooms);
 router.post('/dm-room', protect, chatController.createDMRoom);
 router.post('/mark-read', protect, chatController.markMessagesAsRead);
 
+// Chat request routes
+router.get('/requests', protect, chatController.getChatRequests);
+router.put('/requests/:requestId', protect, chatController.respondChatRequest);
+
 module.exports = router;

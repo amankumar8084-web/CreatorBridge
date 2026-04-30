@@ -1,5 +1,6 @@
 const Message = require('../models/Message.model');
 const User = require('../models/User.model');
+const ChatRequest = require('../models/ChatRequest.model');
 const AppError = require('../utils/AppError');
 
 exports.getMessages = async (req, res, next) => {
@@ -44,7 +45,7 @@ exports.getChatRooms = async (req, res, next) => {
         const userIds = room._id.replace('dm_', '').split('_');
         const otherUser = userIds.find(id => id !== req.user._id.toString());
         if (otherUser) {
-          const user = await User.findById(otherUser).select('name avatar');
+          const user = await User.findById(otherUser).select('name avatar niche');
           roomName = user?.name || 'Unknown User';
           participants = [user];
         }
@@ -112,6 +113,56 @@ exports.markMessagesAsRead = async (req, res, next) => {
     res.status(200).json({
       status: 'success',
       message: 'Messages marked as read'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ---- Chat Request Endpoints ----
+
+exports.getChatRequests = async (req, res, next) => {
+  try {
+    const requests = await ChatRequest.find({
+      to: req.user._id,
+      status: 'pending'
+    }).populate('from', 'name avatar niche').sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      status: 'success',
+      data: requests
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.respondChatRequest = async (req, res, next) => {
+  try {
+    const { requestId } = req.params;
+    const { action } = req.body; // 'accept' or 'decline'
+    
+    if (!['accept', 'decline'].includes(action)) {
+      return next(new AppError('Action must be accept or decline', 400));
+    }
+    
+    const request = await ChatRequest.findById(requestId);
+    
+    if (!request) {
+      return next(new AppError('Chat request not found', 404));
+    }
+    
+    if (request.to.toString() !== req.user._id.toString()) {
+      return next(new AppError('Unauthorized', 403));
+    }
+    
+    request.status = action === 'accept' ? 'accepted' : 'declined';
+    await request.save();
+    
+    res.status(200).json({
+      status: 'success',
+      message: `Chat request ${request.status}`,
+      data: request
     });
   } catch (error) {
     next(error);

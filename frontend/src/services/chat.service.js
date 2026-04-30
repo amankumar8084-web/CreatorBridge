@@ -28,8 +28,19 @@ const chatService = {
   },
 
   markAsRead: async (roomId) => {
-    const response = await api.put(`/chat/rooms/${roomId}/read`);
+    const response = await api.post('/chat/mark-read', { roomId });
     return response.data.data;
+  },
+
+  // Chat request endpoints
+  getChatRequests: async () => {
+    const response = await api.get('/chat/requests');
+    return response.data.data;
+  },
+
+  respondChatRequest: async (requestId, action) => {
+    const response = await api.put(`/chat/requests/${requestId}`, { action });
+    return response.data;
   }
 };
 

@@ -60,6 +60,11 @@ const Chat = () => {
     }
   }, [messagesData]);
   
+  // Clear messages immediately when switching chats to avoid flicker
+  useEffect(() => {
+    setMessages([]);
+  }, [selectedChat?._id]);
+  
   useEffect(() => {
     if (selectedChat) {
       joinChat(selectedChat._id);
@@ -70,7 +75,8 @@ const Chat = () => {
     if (!socket) return;
     
     const handleNewMessage = (newMessage) => {
-      if (selectedChat && newMessage.chatId === selectedChat._id) {
+      // Server uses 'room' field for the chat room ID
+      if (selectedChat && newMessage.room === selectedChat._id) {
         setMessages(prev => [...prev, newMessage]);
       }
     };
@@ -87,7 +93,8 @@ const Chat = () => {
     e.preventDefault();
     if (!message.trim() || !selectedChat) return;
     
-    sendMessage(selectedChat._id, message);
+    const recipientId = selectedChat.participants[0]?._id;
+    sendMessage(selectedChat._id, message, recipientId);
     setMessage('');
   };
 

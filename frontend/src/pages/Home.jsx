@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiChat, HiUsers, HiVideoCamera, HiTrendingUp } from 'react-icons/hi';
@@ -200,8 +201,8 @@ const Home = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/stats');
-        const data = await response.json();
+        const response = await api.get('/stats');
+        const data = response.data;
         
         const formatNumber = (num) => {
           if (num >= 1000) return (num / 1000).toFixed(1) + 'k+';
@@ -234,6 +235,9 @@ const Home = () => {
     <>
       <Toast message={toast.message} visible={toast.visible} />
 
+      {/* ── Scrolling Stats Ticker (full-width, top of page) ── */}
+      <StatTicker stats={stats} onStatClick={showToast} />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero */}
         <motion.div
@@ -252,11 +256,6 @@ const Home = () => {
           </p>
         </motion.div>
       </div>
-
-      {/* ── Scrolling Stats Ticker (full-width, outside max-w container) ── */}
-      <StatTicker stats={stats} onStatClick={showToast} />
-
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Features Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">

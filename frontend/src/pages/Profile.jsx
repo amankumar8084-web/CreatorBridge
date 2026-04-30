@@ -135,10 +135,6 @@ const Profile = () => {
                 <div className="font-bold text-gray-900">{profile.following?.length || 0}</div>
                 <div className="text-xs text-gray-500">Following</div>
               </div>
-              <div className="text-center">
-                <div className="font-bold text-gray-900">{profile.reputation || 0}</div>
-                <div className="text-xs text-gray-500">Reputation</div>
-              </div>
             </div>
           </div>
         </div>

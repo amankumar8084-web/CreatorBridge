@@ -82,7 +82,7 @@ exports.createDMRoom = async (req, res, next) => {
       return next(new AppError('User not found', 404));
     }
     
-    const roomId = `dm_${[req.user._id, userId].sort().join('_')}`;
+    const roomId = `dm_${[req.user._id.toString(), userId.toString()].sort().join('_')}`;
     
     res.status(200).json({
       status: 'success',

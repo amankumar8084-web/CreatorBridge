@@ -5,7 +5,7 @@ import userService from '../services/user.service';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { HiPaperAirplane, HiUser, HiUsers, HiChatBubbleLeftRight } from 'react-icons/hi2';
+import { HiPaperAirplane, HiUser, HiUsers, HiChatBubbleLeftRight, HiArrowLeft } from 'react-icons/hi2';
 import Loader from '../components/common/Loader';
 
 const Chat = () => {
@@ -116,7 +116,7 @@ const Chat = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-8rem)]">
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden h-full flex">
         {/* Sidebar */}
-        <div className="w-full md:w-80 border-r border-gray-200 flex flex-col">
+        <div className={`w-full md:w-80 border-r border-gray-200 flex-col ${selectedChat ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <h2 className="font-bold text-gray-900 flex items-center gap-2">
               <HiUsers className="text-indigo-600" /> Connections
@@ -159,12 +159,18 @@ const Chat = () => {
         </div>
         
         {/* Chat Area */}
-        <div className="hidden md:flex flex-1 flex-col bg-gray-50">
+        <div className={`flex-1 flex-col bg-gray-50 ${selectedChat ? 'flex' : 'hidden md:flex'}`}>
           {selectedChat ? (
             <>
               {/* Chat Header */}
               <div className="p-4 bg-white border-b border-gray-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setSelectedChat(null)}
+                    className="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full transition"
+                  >
+                    <HiArrowLeft className="w-5 h-5" />
+                  </button>
                   <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
                     <HiUser className="text-indigo-600" />
                   </div>
@@ -179,26 +185,34 @@ const Chat = () => {
               
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages?.map((msg) => (
-                  <div
-                    key={msg._id}
-                    className={`flex ${msg.sender === currentUserId ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[70%] p-3 rounded-2xl ${
-                        msg.sender === currentUserId
-                          ? 'bg-indigo-600 text-white rounded-tr-none'
-                          : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
-                      }`}
-                    >
-                      <p className="text-sm">{msg.content}</p>
-                      <span className="text-[10px] opacity-70 mt-1 block">
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
+                {messagesLoading ? (
+                  <div className="flex justify-center items-center h-full">
+                    <Loader />
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
+                ) : (
+                  <>
+                    {messages?.map((msg) => (
+                      <div
+                        key={msg._id}
+                        className={`flex ${msg.sender === currentUserId ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[70%] p-3 rounded-2xl ${
+                            msg.sender === currentUserId
+                              ? 'bg-indigo-600 text-white rounded-tr-none'
+                              : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
+                          }`}
+                        >
+                          <p className="text-sm">{msg.content}</p>
+                          <span className="text-[10px] opacity-70 mt-1 block">
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </>
+                )}
               </div>
               
               {/* Input */}

@@ -9,7 +9,7 @@ const { initSocket } = require('./src/services/websocket.service');
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'https://creatorbridge-iota.vercel.app/',
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true
   }
 });

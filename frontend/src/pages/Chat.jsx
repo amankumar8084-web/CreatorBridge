@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import chatService from '../services/chat.service';
 import userService from '../services/user.service';
@@ -31,7 +31,7 @@ const Chat = () => {
   
   const { user } = useAuth();
   const currentUserId = user?.id || user?._id;
-  const { socket, joinChat, sendMessage, sendChatRequest, sendTyping, isConnected, connectionState, onlineUsers } = useSocket();
+  const { socket, joinChat, sendMessage, sendChatRequest, sendTyping, isConnected, onlineUsers } = useSocket();
   const queryClient = useQueryClient();
   
   // ---- Data Fetching ----
@@ -91,19 +91,17 @@ const Chat = () => {
     }
   );
   
-  // Sync fetched messages into local state
+  // Sync fetched messages into local state (only if chat matches)
   useEffect(() => {
     if (messagesData) {
       setMessages(messagesData);
     }
   }, [messagesData]);
-  
-  // Clear messages immediately when switching chats
+
+  // Clear old messages and typing when switching chats
   useEffect(() => {
-    if (selectedChat?._id) {
-      setMessages([]);
-      setTypingUser(null);
-    }
+    setMessages([]);
+    setTypingUser(null);
   }, [selectedChat?._id]);
   
   // ---- Socket Events ----
@@ -273,23 +271,13 @@ const Chat = () => {
   };
   
   // ---- Render ----
-  
+
   if (profileLoading) return <Loader />;
 
-  // Connection status label
-  const connectionLabel = {
-    connected: '● Online',
-    connecting: '○ Connecting...',
-    reconnecting: '◌ Reconnecting...',
-    disconnected: '○ Offline'
-  }[connectionState] || '○ Offline';
-
-  const connectionColor = {
-    connected: 'text-green-500',
-    connecting: 'text-yellow-500',
-    reconnecting: 'text-orange-500',
-    disconnected: 'text-red-400'
-  }[connectionState] || 'text-red-400';
+  // Check if recipient is a connection (memoized)
+  const recipientId = selectedChat?.participants?.[0]?._id;
+  const isRecipientConnection = profile?.followers?.some(f => (f._id || f) === recipientId) ||
+                                 profile?.following?.some(f => (f._id || f) === recipientId);
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 h-[calc(100vh-5rem)]">
@@ -317,7 +305,6 @@ const Chat = () => {
                 )}
               </button>
             </div>
-            <p className={`text-xs mt-1 ${connectionColor}`}>{connectionLabel}</p>
           </div>
 
           {/* Chat Requests Panel */}
@@ -426,11 +413,11 @@ const Chat = () => {
                     <h3 className="font-bold text-gray-900 text-sm">
                       {selectedChat.participants[0]?.name}
                     </h3>
-                    <p className={`text-xs ${connectionColor}`}>
+                    <p className="text-xs text-gray-400">
                       {typingUser ? (
                         <span className="text-indigo-500 italic">typing...</span>
                       ) : onlineUsers.includes(selectedChat.participants[0]?._id) ? (
-                        'Online'
+                        <span className="text-green-500">Online</span>
                       ) : (
                         'Offline'
                       )}
@@ -515,28 +502,17 @@ const Chat = () => {
                     type="text"
                     value={message}
                     onChange={handleTypingInput}
-                    placeholder={
-                      (() => {
-                        const recipientId = selectedChat.participants[0]?._id;
-                        const isConn = profile?.followers?.some(f => (f._id || f) === recipientId) ||
-                                       profile?.following?.some(f => (f._id || f) === recipientId);
-                        return isConn ? 'Type a message...' : 'Send a chat request...';
-                      })()
-                    }
+                    placeholder={isRecipientConnection ? 'Type a message...' : 'Send a chat request...'}
                     className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                    disabled={!isConnected}
                   />
                   <button
                     type="submit"
-                    disabled={!message.trim() || !isConnected}
+                    disabled={!message.trim()}
                     className="p-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
                   >
                     <HiPaperAirplane className="w-5 h-5" />
                   </button>
                 </div>
-                {!isConnected && (
-                  <p className="text-xs text-red-400 mt-1 text-center">Disconnected — reconnecting...</p>
-                )}
               </form>
             </>
           ) : (

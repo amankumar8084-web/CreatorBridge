@@ -252,7 +252,6 @@ const Chat = () => {
       await chatService.respondChatRequest(requestId, action);
       toast.success(action === 'accept' ? 'Chat request accepted!' : 'Chat request declined.');
       refetchRequests();
-      // Refresh connections if accepted
       if (action === 'accept') {
         queryClient.invalidateQueries(['profile', currentUserId]);
       }

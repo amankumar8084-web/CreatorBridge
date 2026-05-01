@@ -16,7 +16,6 @@ export const SocketProvider = ({ children }) => {
   const socketRef = useRef(null);
   const auth = useAuth();
   const token = auth?.token;
-  // Use only the token string as dependency — not the user object (which changes identity every render)
   const userId = auth?.user?.id || auth?.user?._id;
 
   useEffect(() => {
@@ -30,8 +29,6 @@ export const SocketProvider = ({ children }) => {
       }
       return;
     }
-
-    // Prevent duplicate connections
     if (socketRef.current) return;
 
     setConnectionState('connecting');
@@ -66,7 +63,6 @@ export const SocketProvider = ({ children }) => {
       console.log('Socket disconnected:', reason);
       setIsConnected(false);
       if (reason === 'io server disconnect') {
-        // Server force-disconnected us; reconnect manually
         newSocket.connect();
       }
       setConnectionState('disconnected');
@@ -107,7 +103,7 @@ export const SocketProvider = ({ children }) => {
       newSocket.close();
       socketRef.current = null;
     };
-  }, [token, userId]); // Only reconnect when auth credentials change
+  }, [token, userId]);
 
   const joinChat = useCallback((roomId) => {
     if (socketRef.current) {
@@ -122,8 +118,6 @@ export const SocketProvider = ({ children }) => {
         reject(new Error('Socket not connected'));
         return;
       }
-
-      // Timeout if server doesn't respond within 10s
       const timeout = setTimeout(() => {
         reject(new Error('Message timed out'));
       }, 10000);
@@ -147,7 +141,6 @@ export const SocketProvider = ({ children }) => {
         reject(new Error('Socket not connected'));
         return;
       }
-
       socketRef.current.emit('chat:request', { recipientId }, (response) => {
         if (response?.error) {
           toast.error(response.error);

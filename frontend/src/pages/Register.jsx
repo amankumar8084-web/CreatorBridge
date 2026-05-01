@@ -10,7 +10,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -18,7 +18,7 @@ const Register = () => {
     setLoading(false);
     if (success) navigate('/profile');
   };
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-cyan-50 py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
@@ -26,22 +26,22 @@ const Register = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl"
       >
-       <div>
-  <div className="flex justify-center mb-4">
-    <img 
-      src="/logoCB.jpeg"
-      alt="Creator Bridge"
-      className="h-16 w-auto object-contain"
-    />
-  </div>
-  <h2 className="text-center text-3xl font-extrabold text-gray-900">
-    Join CreatorBridge
-  </h2>
-  <p className="mt-2 text-center text-sm text-gray-600">
-    Connect, grow, and thrive with fellow creators
-  </p>
-</div>
-        
+        <div>
+          <div className="flex justify-center mb-4">
+            <img
+              src="/logoCB.jpeg"
+              alt="Creator Bridge"
+              className="h-16 w-auto object-contain"
+            />
+          </div>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
+            Join CreatorBridge
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Connect, grow, and thrive with fellow creators
+          </p>
+        </div>
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -55,7 +55,7 @@ const Register = () => {
                 placeholder="Your name"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Email</label>
               <input
@@ -67,7 +67,7 @@ const Register = () => {
                 placeholder="Enter your email address"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Password</label>
               <input
@@ -81,7 +81,7 @@ const Register = () => {
               />
             </div>
           </div>
-          
+
           <button
             type="submit"
             disabled={loading}
@@ -89,7 +89,7 @@ const Register = () => {
           >
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
-          
+
           <p className="text-center text-sm text-gray-600">
             Already have an account?{' '}
             <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">

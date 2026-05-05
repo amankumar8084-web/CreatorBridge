@@ -39,7 +39,7 @@ const ChannelCard = ({ creator }) => {
             className="w-16 h-16 rounded-2xl object-cover ring-2 ring-gray-50 group-hover:ring-indigo-100 transition-all"
           />
           {isOnline && (
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-sm animate-pulse" />
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-sm" />
           )}
         </Link>
         

@@ -144,7 +144,7 @@ const Profile = () => {
               className="w-24 h-24 rounded-full object-cover border-2 border-white shadow-md bg-gray-100" 
             />
             {isOnline && (
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-white rounded-full shadow-sm animate-pulse z-10" />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-white rounded-full shadow-sm z-10" />
             )}
             {isOwnProfile && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">

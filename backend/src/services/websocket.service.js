@@ -27,12 +27,13 @@ const initSocket = (io) => {
   io.on('connection', (socket) => {
     console.log(`User connected: ${socket.user.name}`);
     
-    // Store online user
-    onlineUsers.set(socket.user.id, socket.id);
+    // Store online user - Ensure ID is a string for reliable Map keys
+    const userIdStr = socket.user._id.toString();
+    onlineUsers.set(userIdStr, socket.id);
     io.emit('users:online', Array.from(onlineUsers.keys()));
     
     // Join user to their personal room
-    socket.join(`user:${socket.user.id}`);
+    socket.join(`user:${userIdStr}`);
     
     // Handle joining chat rooms
     socket.on('chat:join', (roomId) => {
@@ -180,11 +181,11 @@ const initSocket = (io) => {
     // Handle disconnection
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.user.name}`);
-      onlineUsers.delete(socket.user.id);
+      onlineUsers.delete(socket.user._id.toString());
       io.emit('users:online', Array.from(onlineUsers.keys()));
       
       // Update last active
-      User.findByIdAndUpdate(socket.user.id, { lastActive: new Date() }).exec();
+      User.findByIdAndUpdate(socket.user._id, { lastActive: new Date() }).exec();
     });
   });
 };

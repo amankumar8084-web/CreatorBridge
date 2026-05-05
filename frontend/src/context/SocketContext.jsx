@@ -31,15 +31,18 @@ export const SocketProvider = ({ children }) => {
     }
     if (socketRef.current) return;
 
+    const socketUrl = SOCKET_URL.endsWith('/') ? SOCKET_URL.slice(0, -1) : SOCKET_URL;
+
     setConnectionState('connecting');
-    const newSocket = io(SOCKET_URL, {
+    const newSocket = io(socketUrl, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket', 'polling'], // Allow polling fallback but prioritize websocket
       reconnection: true,
-      reconnectionAttempts: Infinity,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 10000,
-      timeout: 20000
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+      forceNew: true
     });
 
     newSocket.on('connect', () => {

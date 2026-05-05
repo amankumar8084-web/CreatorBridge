@@ -23,15 +23,13 @@ const Chat = () => {
   const [message, setMessage] = useState('');
   const [connections, setConnections] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [typingUser, setTypingUser] = useState(null);
   const [showRequests, setShowRequests] = useState(false);
   const messagesEndRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null);
   
   const { user } = useAuth();
   const currentUserId = user?.id || user?._id;
-  const { socket, joinChat, sendMessage, sendChatRequest, sendTyping, isConnected, onlineUsers } = useSocket();
+  const { socket, joinChat, sendMessage, sendChatRequest, isConnected, onlineUsers } = useSocket();
   const queryClient = useQueryClient();
   
   // ---- Data Fetching ----
@@ -98,10 +96,8 @@ const Chat = () => {
     }
   }, [messagesData]);
 
-  // Clear old messages and typing when switching chats
   useEffect(() => {
     setMessages([]);
-    setTypingUser(null);
   }, [selectedChat?._id]);
   
   // ---- Socket Events ----
@@ -133,18 +129,7 @@ const Chat = () => {
     return () => socket.off('chat:message', handleNewMessage);
   }, [socket, selectedChat?._id]);
 
-  // Listen for typing indicators
-  useEffect(() => {
-    if (!socket) return;
 
-    const handleTyping = ({ userId, name, isTyping }) => {
-      if (userId === currentUserId) return;
-      setTypingUser(isTyping ? name : null);
-    };
-
-    socket.on('chat:typing', handleTyping);
-    return () => socket.off('chat:typing', handleTyping);
-  }, [socket, currentUserId]);
 
   // Listen for new chat requests
   useEffect(() => {
@@ -158,10 +143,9 @@ const Chat = () => {
     return () => socket.off('chat:request:new', handleNewRequest);
   }, [socket, refetchRequests]);
   
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, typingUser]);
+  }, [messages]);
   
   // ---- Handlers ----
   
@@ -204,8 +188,7 @@ const Chat = () => {
     setMessage('');
     inputRef.current?.focus();
     
-    // Stop typing indicator
-    sendTyping(selectedChat._id, false);
+
     
     try {
       const realMessage = await sendMessage(selectedChat._id, msgToSend, recipientId);
@@ -217,19 +200,9 @@ const Chat = () => {
     }
   };
 
-  // Typing indicator handler
-  const handleTypingInput = (e) => {
+  // Message input handler
+  const handleMessageChange = (e) => {
     setMessage(e.target.value);
-
-    if (!selectedChat?._id) return;
-
-    sendTyping(selectedChat._id, true);
-
-    // Debounce: stop typing after 2s of no input
-    clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      sendTyping(selectedChat._id, false);
-    }, 2000);
   };
 
   const handleSelectConnection = useCallback(async (connection) => {
@@ -368,8 +341,9 @@ const Chat = () => {
                           alt={conn.name}
                           className="w-10 h-10 rounded-full"
                         />
-                        {/* Online indicator dot */}
-                        <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${isOnline ? 'bg-green-400' : 'bg-gray-300'}`} />
+                        {isOnline && (
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm animate-pulse" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-gray-900 truncate">{conn.name}</h4>
@@ -405,21 +379,19 @@ const Chat = () => {
                     <div className="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center">
                       <HiUser className="text-indigo-600 w-5 h-5" />
                     </div>
-                    <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${
-                      onlineUsers.includes(selectedChat.participants[0]?._id) ? 'bg-green-400' : 'bg-gray-300'
-                    }`} />
+                    {onlineUsers.includes(selectedChat.participants[0]?._id) && (
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white shadow-sm animate-pulse" />
+                    )}
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-sm">
                       {selectedChat.participants[0]?.name}
                     </h3>
-                    <p className="text-xs text-gray-400">
-                      {typingUser ? (
-                        <span className="text-indigo-500 italic">typing...</span>
-                      ) : onlineUsers.includes(selectedChat.participants[0]?._id) ? (
-                        <span className="text-green-500">Online</span>
+                    <p className="text-xs">
+                      {onlineUsers.includes(selectedChat.participants[0]?._id) ? (
+                        <span className="text-green-500 font-medium">Online</span>
                       ) : (
-                        'Offline'
+                        <span className="text-gray-400">Offline</span>
                       )}
                     </p>
                   </div>
@@ -476,19 +448,7 @@ const Chat = () => {
                         </motion.div>
                       );
                     })}
-                    {/* Typing indicator */}
-                    {typingUser && (
-                      <div className="flex justify-start">
-                        <div className="bg-white text-gray-500 text-sm border border-gray-200 rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm italic">
-                          {typingUser} is typing
-                          <span className="inline-flex ml-1">
-                            <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
-                            <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
-                            <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
-                          </span>
-                        </div>
-                      </div>
-                    )}
+
                     <div ref={messagesEndRef} />
                   </>
                 )}
@@ -501,7 +461,7 @@ const Chat = () => {
                     ref={inputRef}
                     type="text"
                     value={message}
-                    onChange={handleTypingInput}
+                    onChange={handleMessageChange}
                     placeholder={isRecipientConnection ? 'Type a message...' : 'Send a chat request...'}
                     className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                   />

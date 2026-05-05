@@ -3,14 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import userService from '../services/user.service';
 import youtubeService from '../services/youtube.service';
+import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { HiUserPlus, HiCheck, HiPencilSquare, HiUsers, HiVideoCamera } from 'react-icons/hi2';
+import { HiUserPlus, HiCheck, HiPencilSquare, HiUsers, HiVideoCamera, HiXMark } from 'react-icons/hi2';
 import Loader from '../components/common/Loader';
+import toast from 'react-hot-toast';
 
 const Profile = () => {
   const { id } = useParams();
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', bio: '', niche: '' });
   const [youtubeChannelId, setYoutubeChannelId] = useState('');
@@ -40,15 +42,70 @@ const Profile = () => {
     }
   );
   
-  // Verify YouTube channel
+  // Remove YouTube channel mutation
+  const removeYoutubeMutation = useMutation(
+    (channelId) => youtubeService.removeChannel(channelId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['profile', profileId]);
+        toast.success('Channel removed');
+      },
+      onError: () => {
+        toast.error('Failed to remove channel');
+      }
+    }
+  );
+  
+  // Avatar upload mutation
+  const uploadAvatarMutation = useMutation(
+    (file) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      return userService.updateAvatar(formData);
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['profile', profileId]);
+        refreshUser(); // Update globally in Navbar
+        toast.success('Profile picture updated');
+      },
+      onError: () => {
+        toast.error('Failed to update profile picture');
+      }
+    }
+  );
+
+  // Remove Avatar mutation
+  const removeAvatarMutation = useMutation(
+    () => userService.removeAvatar(),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['profile', profileId]);
+        refreshUser();
+        toast.success('Profile picture removed');
+      },
+      onError: () => {
+        toast.error('Failed to remove profile picture');
+      }
+    }
+  );
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      uploadAvatarMutation.mutate(file);
+    }
+  };
+
   const verifyYouTube = async () => {
     setVerifying(true);
     try {
       await youtubeService.verifyChannel({ channelId: youtubeChannelId });
       queryClient.invalidateQueries(['profile', profileId]);
-      alert('YouTube channel verified successfully!');
+      setYoutubeChannelId('');
+      toast.success('YouTube channel added successfully!');
     } catch (err) {
-      alert('Failed to verify channel. Please check the channel ID.');
+      toast.error('Failed to verify channel. Please check the channel ID.');
     } finally {
       setVerifying(false);
     }
@@ -72,16 +129,46 @@ const Profile = () => {
   
   const niches = ['Gaming', 'Cooking', 'Tech', 'Education', 'Vlogs', 'Music', 'Fitness', 'Art', 'Other'];
   
+  const { onlineUsers = [] } = useSocket();
+  const isOnline = onlineUsers?.includes(profileId);
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Profile Header */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-          <img
-            src={profile.avatar || `https://ui-avatars.com/api/?name=${profile.name}&size=120&background=4F46E5`}
-            alt={profile.name}
-            className="w-24 h-24 rounded-full object-cover"
-          />
+          <div className="relative group">
+            <img 
+              src={profile.avatar} 
+              alt={profile.name}
+              className="w-24 h-24 rounded-full object-cover border-2 border-white shadow-md bg-gray-100" 
+            />
+            {isOnline && (
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-white rounded-full shadow-sm animate-pulse z-10" />
+            )}
+            {isOwnProfile && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <label className="cursor-pointer flex flex-col items-center text-center p-1">
+                  <HiVideoCamera className="text-white w-5 h-5" />
+                  <span className="text-white text-[8px] font-bold">CHANGE</span>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                  />
+                </label>
+                {profile.avatar && !profile.avatar.includes('ui-avatars.com') && (
+                  <button 
+                    onClick={() => removeAvatarMutation.mutate()}
+                    className="text-white text-[8px] font-bold hover:text-red-400 mt-0.5"
+                  >
+                    REMOVE
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           
           <div className="flex-1">
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -149,145 +236,111 @@ const Profile = () => {
         </div>
       </div>
       
-      {/* YouTube Channel Section */}
+      {/* YouTube Channels Section */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <HiVideoCamera /> YouTube Channel
-        </h2>
-        
-        {profile.youtubeChannel?.verified ? (
-  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
-    {/* Header with verification badge */}
-    <div className="flex items-start justify-between flex-wrap gap-3">
-      <div className="flex items-center gap-3">
-        {/* YouTube icon */}
-        <div className="bg-red-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm">
-          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-          </svg>
-        </div>
-        
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-bold text-gray-900 text-lg">
-              {profile.youtubeChannel.channelName}
-            </h3>
-            <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-              </svg>
-              Verified
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <HiVideoCamera className="text-red-600" /> YouTube Channels
+          </h2>
+          {isOwnProfile && profile.youtubeChannels?.length > 0 && (
+            <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-full">
+              {profile.youtubeChannels.length} Linked
             </span>
-          </div>
+          )}
         </div>
-      </div>
-      
-      {/* Last sync badge */}
-      <div className="bg-white/60 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-green-100">
-        <p className="text-xs text-gray-500">Last synced</p>
-        <p className="text-xs font-medium text-gray-700">
-          {new Date(profile.youtubeChannel.lastSync).toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          })}
-        </p>
-      </div>
-    </div>
-    
-    {/* Stats grid */}
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5 pt-4 border-t border-green-200/50">
-      {/* Subscribers */}
-      <div className="flex items-center gap-3">
-        <div className="bg-green-100 w-10 h-10 rounded-xl flex items-center justify-center">
-          <svg className="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Subscribers</p>
-          <p className="text-xl font-bold text-gray-900">
-            {profile.youtubeChannel.subscriberCount?.toLocaleString()}
-          </p>
-        </div>
-      </div>
-      
-      {/* Total Views (if available) */}
-      {profile.youtubeChannel.viewCount && (
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-100 w-10 h-10 rounded-xl flex items-center justify-center">
-            <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Total Views</p>
-            <p className="text-xl font-bold text-gray-900">
-              {profile.youtubeChannel.viewCount?.toLocaleString()}
-            </p>
-          </div>
-        </div>
-      )}
-      
-      {/* Video Count (if available) */}
-      {profile.youtubeChannel.videoCount && (
-        <div className="flex items-center gap-3">
-          <div className="bg-purple-100 w-10 h-10 rounded-xl flex items-center justify-center">
-            <svg className="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Videos</p>
-            <p className="text-xl font-bold text-gray-900">
-              {profile.youtubeChannel.videoCount?.toLocaleString()}
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-    
-    {/* Optional: Engagement metrics */}
-    {profile.youtubeChannel.engagementRate && (
-      <div className="mt-4 pt-3 border-t border-green-200/30">
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-gray-600">Engagement Rate</span>
-          <span className="font-semibold text-green-700">{profile.youtubeChannel.engagementRate}%</span>
-        </div>
-        <div className="w-full bg-green-200 rounded-full h-1.5 mt-1">
-          <div 
-            className="bg-green-600 h-1.5 rounded-full transition-all duration-500"
-            style={{ width: `${Math.min(profile.youtubeChannel.engagementRate, 100)}%` }}
-          />
-        </div>
-      </div>
-    )}
-  </div>
+        
+        <div className="space-y-4">
+          {profile.youtubeChannels && profile.youtubeChannels.length > 0 ? (
+            profile.youtubeChannels.map((channel) => (
+              <div key={channel.channelId} className="bg-gradient-to-br from-gray-50 to-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 group">
+                <div className="flex items-start justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={channel.thumbnailUrl || `https://ui-avatars.com/api/?name=${channel.channelName}&background=red&color=white`} 
+                      alt={channel.channelName}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://ui-avatars.com/api/?name=${channel.channelName}&background=red&color=white`;
+                      }}
+                      className="w-12 h-12 rounded-xl object-cover border border-gray-200 shadow-sm"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-gray-900">{channel.channelName}</h3>
+                        {channel.verified && (
+                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            <HiCheck className="w-3 h-3" /> Verified
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        {channel.subscriberCount?.toLocaleString()} Subscribers
+                      </p>
+                    </div>
+                  </div>
 
- ) : isOwnProfile ? (
-          <div>
-            <input
-              type="text"
-              value={youtubeChannelId}
-              onChange={(e) => setYoutubeChannelId(e.target.value)}
-              placeholder="Enter your YouTube Channel ID"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-3"
-            />
-            <button
-              onClick={verifyYouTube}
-              disabled={verifying || !youtubeChannelId}
-              className="btn-primary px-4 py-2 rounded-lg disabled:opacity-50"
-            >
-              {verifying ? 'Verifying...' : 'Verify YouTube Channel'}
-            </button>
-            <p className="text-xs text-gray-500 mt-2">
-              Find your channel ID in YouTube Studio → Settings → Channel
-            </p>
-          </div>
-        ) : (
-          <p className="text-gray-500">No YouTube channel linked</p>
-        )}
+                  <div className="flex items-center gap-2">
+                    {isOwnProfile && (
+                      <button
+                        onClick={() => removeYoutubeMutation.mutate(channel.channelId)}
+                        className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Remove Channel"
+                      >
+                        <HiXMark className="w-5 h-5" />
+                      </button>
+                    )}
+                    <a 
+                      href={`https://youtube.com/channel/${channel.channelId}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : !isOwnProfile && (
+            <p className="text-center py-4 text-gray-400 text-sm italic">No YouTube channels linked</p>
+          )}
+
+          {isOwnProfile && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex flex-col gap-3">
+                <p className="text-sm font-medium text-gray-700">
+                  {profile.youtubeChannels?.length > 0 ? 'Add Another Channel' : 'Link Your YouTube Channel'}
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={youtubeChannelId}
+                    onChange={(e) => setYoutubeChannelId(e.target.value)}
+                    placeholder="Channel ID or URL"
+                    className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                  />
+                  <button
+                    onClick={verifyYouTube}
+                    disabled={verifying || !youtubeChannelId.trim()}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-2 whitespace-nowrap"
+                  >
+                    {verifying ? 'Verifying...' : (
+                      <>
+                        <HiVideoCamera className="w-4 h-4" />
+                        Link Channel
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-500 italic">
+                  Tip: You can add multiple channels. Enter your channel ID or URL.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       
       {/* Edit Profile Modal */}
@@ -367,18 +420,26 @@ const Profile = () => {
             </div>
             <div className="overflow-y-auto flex-1 p-4">
               {profile[connectionsType]?.length > 0 ? (
-                <ul className="space-y-4">
+                <ul className="space-y-2">
                   {profile[connectionsType].map(userConn => (
-                    <li key={userConn._id} className="flex items-center gap-3">
-                      <img 
-                        src={userConn.avatar || `https://ui-avatars.com/api/?name=${userConn.name}&background=4F46E5`} 
-                        alt={userConn.name}
-                        className="w-10 h-10 rounded-full object-cover" 
-                      />
-                      <div>
-                        <p className="font-medium text-gray-900">{userConn.name}</p>
-                        <p className="text-xs text-gray-500">{userConn.niche}</p>
-                      </div>
+                    <li key={userConn._id}>
+                      <button
+                        onClick={() => {
+                          navigate(`/profile/${userConn._id || userConn}`);
+                          setShowConnectionsModal(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors group"
+                      >
+                        <img 
+                          src={userConn.avatar || `https://ui-avatars.com/api/?name=${userConn.name}&background=4F46E5`} 
+                          alt={userConn.name}
+                          className="w-10 h-10 rounded-full object-cover border border-gray-100" 
+                        />
+                        <div className="text-left">
+                          <p className="font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">{userConn.name}</p>
+                          <p className="text-xs text-gray-500">{userConn.niche}</p>
+                        </div>
+                      </button>
                     </li>
                   ))}
                 </ul>

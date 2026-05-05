@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiX } from 'react-icons/hi';
+import { HiX, HiPhotograph } from 'react-icons/hi';
 
 const PostForm = ({ onSubmit, onClose, isLoading, initialData }) => {
   const isEditing = !!initialData;
@@ -9,6 +9,8 @@ const PostForm = ({ onSubmit, onClose, isLoading, initialData }) => {
   const [niche, setNiche] = useState(initialData?.niche || '');
   const [tags, setTags] = useState(initialData?.tags || []);
   const [selectedTag, setSelectedTag] = useState('');
+  const [attachment, setAttachment] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(initialData?.attachment || null);
 
   const availableTags = ['SEO', 'thumbnails', 'monetization', 'editing', 'analytics', 'growth', 'collab', 'general'];
   const availableNiches = ['Gaming', 'Cooking', 'Tech', 'Education', 'Vlogs', 'Music', 'Fitness', 'Art'];
@@ -24,10 +26,40 @@ const PostForm = ({ onSubmit, onClose, isLoading, initialData }) => {
     setTags(tags.filter(t => t !== tag));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size too large (max 5MB)');
+        return;
+      }
+      setAttachment(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const removeAttachment = () => {
+    setAttachment(null);
+    setPreviewUrl(null);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
-    onSubmit({ title, content, niche, tags });
+
+    if (attachment) {
+      const formData = new FormData();
+      formData.append('title', title.trim());
+      formData.append('content', content.trim());
+      formData.append('niche', niche);
+      // Append tags as individual fields or a JSON string
+      formData.append('tags', JSON.stringify(tags));
+      if (attachment) formData.append('attachment', attachment);
+      onSubmit(formData);
+    } else {
+      onSubmit({ title: title.trim(), content: content.trim(), niche, tags });
+    }
   };
 
   return (
@@ -127,6 +159,33 @@ const PostForm = ({ onSubmit, onClose, isLoading, initialData }) => {
                       </button>
                     </span>
                   ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Attachment (Optional)</label>
+              {!previewUrl ? (
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <HiPhotograph className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                      <p className="text-xs text-gray-400">PNG, JPG, JPEG (MAX. 5MB)</p>
+                    </div>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                  </label>
+                </div>
+              ) : (
+                <div className="relative rounded-xl overflow-hidden border border-gray-200">
+                  <img src={previewUrl} alt="Preview" className="w-full h-48 object-cover" />
+                  <button
+                    type="button"
+                    onClick={removeAttachment}
+                    className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition"
+                  >
+                    <HiX className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>

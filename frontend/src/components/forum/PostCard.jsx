@@ -75,7 +75,14 @@ const PostCard = ({ post, onEdit }) => {
                 <HiUserCircle className="w-9 h-9 text-gray-400 flex-shrink-0" />
               )}
               <div className="min-w-0">
-                <p className="font-semibold text-gray-900 text-sm truncate">{post.author.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-gray-900 text-sm truncate">{post.author.name}</p>
+                  {isAuthor && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100">
+                      Author
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500">
                   {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                 </p>
@@ -102,7 +109,19 @@ const PostCard = ({ post, onEdit }) => {
           )}
 
           {/* Preview Content */}
-          <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">{post.content}</p>
+          <p className="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-4">{post.content}</p>
+
+          {/* Attachment */}
+          {post.attachment && (
+            <div className="mb-4 rounded-xl overflow-hidden border border-gray-100">
+              <img 
+                src={post.attachment} 
+                alt="Post attachment" 
+                className="w-full max-h-96 object-cover"
+                loading="lazy"
+              />
+            </div>
+          )}
         </div>
 
         {/* Three-dot menu for author */}
@@ -110,9 +129,11 @@ const PostCard = ({ post, onEdit }) => {
           <div className="relative flex-shrink-0" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+              className={`p-1.5 rounded-lg transition-all ${
+                menuOpen ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+              }`}
             >
-              <HiDotsVertical className="w-4 h-4" />
+              <HiDotsVertical className="w-5 h-5" />
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-20">

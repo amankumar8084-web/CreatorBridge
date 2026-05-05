@@ -91,33 +91,6 @@ export const commentService = {
   }
 };
 
-export const meetingService = {
-  async getMeetings(params) {
-    const response = await api.get('/meetings', { params });
-    return response.data;
-  },
-  
-  async getMeeting(id) {
-    const response = await api.get(`/meetings/${id}`);
-    return response.data;
-  },
-  
-  async createMeeting(data) {
-    const response = await api.post('/meetings', data);
-    return response.data;
-  },
-  
-  async joinMeeting(id) {
-    const response = await api.post(`/meetings/${id}/join`);
-    return response.data;
-  },
-  
-  async leaveMeeting(id) {
-    const response = await api.post(`/meetings/${id}/leave`);
-    return response.data;
-  }
-};
-
 export const youtubeService = {
   async verifyChannel(channelId) {
     const response = await api.post('/youtube/verify', { channelId });

@@ -154,20 +154,18 @@ const PostDetail = () => {
             </div>
 
             {isAuthor && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowEditModal(true)}
-                  className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                  title="Edit Post"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all text-sm font-medium border border-transparent hover:border-indigo-100"
                 >
-                  <HiPencil className="w-5 h-5" />
+                  <HiPencil className="w-4 h-4" /> Edit
                 </button>
                 <button
                   onClick={handleDeletePost}
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                  title="Delete Post"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all text-sm font-medium border border-transparent hover:border-red-100"
                 >
-                  <HiTrash className="w-5 h-5" />
+                  <HiTrash className="w-4 h-4" /> Delete
                 </button>
               </div>
             )}
@@ -183,9 +181,20 @@ const PostDetail = () => {
             ))}
           </div>
           
-          <div className="text-gray-700 whitespace-pre-wrap mb-8 leading-relaxed text-base sm:text-lg">
+          <div className="text-gray-700 whitespace-pre-wrap mb-6 leading-relaxed text-base sm:text-lg">
             {post.content}
           </div>
+
+          {/* Attachment */}
+          {post.attachment && (
+            <div className="mb-8 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+              <img 
+                src={post.attachment} 
+                alt="Post attachment" 
+                className="w-full h-auto object-contain bg-gray-50"
+              />
+            </div>
+          )}
           
           <div className="flex items-center gap-6 pt-5 border-t border-gray-100">
             <button
@@ -215,24 +224,36 @@ const PostDetail = () => {
         </div>
         
         {/* Add comment form */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Share your thoughts or advice..."
-            rows="3"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none text-sm sm:text-base"
-          />
-          <div className="flex justify-end mt-3">
+        {user ? (
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Share your thoughts or advice..."
+              rows="3"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none text-sm sm:text-base"
+            />
+            <div className="flex justify-end mt-3">
+              <button
+                onClick={() => addCommentMutation.mutate()}
+                disabled={!comment.trim() || addCommentMutation.isLoading}
+                className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm"
+              >
+                {addCommentMutation.isLoading ? 'Posting...' : 'Post Comment'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gray-50 border border-gray-200 border-dashed rounded-2xl p-8 text-center">
+            <p className="text-gray-600 mb-4">You need to be logged in to participate in the discussion.</p>
             <button
-              onClick={() => addCommentMutation.mutate()}
-              disabled={!comment.trim() || addCommentMutation.isLoading}
-              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm"
+              onClick={() => navigate('/login')}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all shadow-md"
             >
-              {addCommentMutation.isLoading ? 'Posting...' : 'Post Comment'}
+              Log In to Comment
             </button>
           </div>
-        </div>
+        )}
         
         {/* Comments list */}
         <div className="space-y-4">

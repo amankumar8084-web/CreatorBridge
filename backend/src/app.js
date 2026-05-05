@@ -11,7 +11,6 @@ const userRoutes = require('./routes/user.routes');
 const postRoutes = require('./routes/post.routes');
 const commentRoutes = require('./routes/comment.routes');
 const chatRoutes = require('./routes/chat.routes');
-const meetingRoutes = require('./routes/meeting.routes');
 const youtubeRoutes = require('./routes/youtube.routes');
 const notificationRoutes = require('./routes/notification.routes');
 
@@ -38,7 +37,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/meetings', meetingRoutes);
+
 app.use('/api/youtube', youtubeRoutes);
 app.use('/api/notifications', notificationRoutes);
 
@@ -50,7 +49,6 @@ app.get('/health', (req, res) => {
 // Import Models for Stats
 const User = require('./models/User.model');
 const Post = require('./models/Post.model');
-const MeetingRoom = require('./models/MeetingRoom.model');
 
 // backend/server.js or your API route
 app.get('/api/stats', async (req, res) => {
@@ -58,13 +56,12 @@ app.get('/api/stats', async (req, res) => {
     // Fetch real counts from your database
     const activeCreators = await User.countDocuments({ deletedAt: null });
     const postsShared = await Post.countDocuments();
-    const meetingsHosted = await MeetingRoom.countDocuments();
+
     const nichesCovered = (await User.distinct('niche')).length;
     
     res.json({
       activeCreators,
       postsShared,
-      meetingsHosted,
       nichesCovered
     });
   } catch (error) {

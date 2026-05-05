@@ -9,7 +9,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['follow', 'upvote', 'comment', 'reply', 'mention', 'meeting_invite', 'post_pinned', 'badge_earned'],
+    enum: ['follow', 'upvote', 'comment', 'reply', 'mention', 'post_pinned', 'badge_earned'],
     required: true
   },
   title: {
@@ -24,7 +24,7 @@ const notificationSchema = new mongoose.Schema({
     postId: mongoose.Schema.Types.ObjectId,
     commentId: mongoose.Schema.Types.ObjectId,
     userId: mongoose.Schema.Types.ObjectId,
-    meetingId: mongoose.Schema.Types.ObjectId,
+
     url: String
   },
   isRead: {

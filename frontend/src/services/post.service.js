@@ -12,12 +12,14 @@ const postService = {
   },
 
   createPost: async (postData) => {
-    const response = await api.post('/posts', postData);
+    const config = postData instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const response = await api.post('/posts', postData, config);
     return response.data.data;
   },
 
   updatePost: async (id, postData) => {
-    const response = await api.patch(`/posts/${id}`, postData);
+    const config = postData instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const response = await api.patch(`/posts/${id}`, postData, config);
     return response.data.data;
   },
 

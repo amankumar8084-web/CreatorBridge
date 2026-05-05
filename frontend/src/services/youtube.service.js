@@ -16,6 +16,11 @@ const youtubeService = {
       params: { query }
     });
     return response.data.data;
+  },
+
+  removeChannel: async (channelId) => {
+    const response = await api.delete(`/youtube/${channelId}`);
+    return response.data.data;
   }
 };
 

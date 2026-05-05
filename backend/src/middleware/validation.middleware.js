@@ -19,7 +19,7 @@ const validate = (validations) => {
 const postRules = [
   body('title').notEmpty().withMessage('Title is required').isLength({ max: 200 }),
   body('content').notEmpty().withMessage('Content is required').isLength({ min: 10 }),
-  body('tags').optional().isArray()
+  body('tags').optional()
 ];
 
 const commentRules = [

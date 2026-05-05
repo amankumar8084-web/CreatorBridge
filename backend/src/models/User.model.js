@@ -67,6 +67,15 @@ const userSchema = new mongoose.Schema({
     }
   ],
 
+  youtubeChannels: [{
+    channelId: { type: String, index: true },
+    channelName: String,
+    subscriberCount: { type: Number, default: 0 },
+    verified: { type: Boolean, default: false },
+    lastSync: Date,
+    thumbnailUrl: String
+  }],
+
   youtubeChannel: {
     channelId: { type: String, index: true },
     channelName: String,

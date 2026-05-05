@@ -109,6 +109,7 @@ export const AuthProvider = ({ children }) => {
       register,
       logout,
       updateProfile,
+      refreshUser: fetchUser,
       isAuthenticated: !!user
     }}>
       {!loading && children}

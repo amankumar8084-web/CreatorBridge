@@ -2,6 +2,20 @@ const Post = require('../models/Post.model');
 const User = require('../models/User.model');
 const AppError = require('../utils/AppError');
 
+const parseTags = (tags) => {
+  if (!tags) return [];
+  if (Array.isArray(tags)) return tags;
+  if (typeof tags === 'string') {
+    try {
+      if (tags.startsWith('[')) return JSON.parse(tags);
+      return tags.split(',').map(t => t.trim()).filter(Boolean);
+    } catch (e) {
+      return [tags];
+    }
+  }
+  return [];
+};
+
 exports.getAllPosts = async (req, res, next) => {
   try {
     const { niche, tag, page = 1, limit = 20, sort = '-createdAt' } = req.query;
@@ -61,8 +75,9 @@ exports.createPost = async (req, res, next) => {
       title,
       content,
       author: req.user.id,
-      tags: tags || [],
-      niche: niche || req.user.niche
+      tags: parseTags(tags),
+      niche: niche || req.user.niche,
+      attachment: req.file ? req.file.path : null
     });
     
     await post.populate('author', 'name avatar niche');
@@ -95,7 +110,8 @@ exports.updatePost = async (req, res, next) => {
     const { title, content, tags } = req.body;
     if (title) post.title = title;
     if (content) post.content = content;
-    if (tags) post.tags = tags;
+    if (tags) post.tags = parseTags(tags);
+    if (req.file) post.attachment = req.file.path;
     
     await post.save();
     

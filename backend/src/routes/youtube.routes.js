@@ -7,5 +7,6 @@ const router = express.Router();
 router.post('/verify', protect, youtubeController.verifyChannel);
 router.get('/stats/:userId', protect, youtubeController.getChannelStats);
 router.get('/search', protect, youtubeController.searchChannels);
+router.delete('/:channelId', protect, youtubeController.removeChannel);
 
 module.exports = router;

@@ -148,3 +148,38 @@ exports.searchUsers = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return next(new AppError('Please upload an image', 400));
+    }
+
+    const user = await User.findById(req.user._id);
+    user.avatar = req.file.path;
+    await user.save();
+
+    res.status(200).json({
+      status: 'success',
+      data: { avatar: user.avatar }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.removeAvatar = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    // Reset to default avatar logic in model (or just set to null/empty and model function will handle)
+    user.avatar = undefined; 
+    await user.save();
+
+    res.status(200).json({
+      status: 'success',
+      data: { avatar: user.avatar }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

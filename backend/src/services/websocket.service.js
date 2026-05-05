@@ -177,40 +177,6 @@ const initSocket = (io) => {
       }
     });
     
-    // Handle typing indicators
-    socket.on('chat:typing', ({ roomId, isTyping }) => {
-      socket.to(roomId).emit('chat:typing', {
-        userId: socket.user.id,
-        name: socket.user.name,
-        isTyping
-      });
-    });
-    
-    // WebRTC signaling for meetings
-    socket.on('meeting:join', (meetingId) => {
-      socket.join(`meeting:${meetingId}`);
-      socket.to(`meeting:${meetingId}`).emit('meeting:user-joined', {
-        userId: socket.user.id,
-        name: socket.user.name
-      });
-    });
-    
-    socket.on('meeting:signal', ({ meetingId, signal, to }) => {
-      io.to(`user:${to}`).emit('meeting:signal', { signal, from: socket.user.id, name: socket.user.name });
-    });
-
-    socket.on('meeting:offer', ({ meetingId, offer, to }) => {
-      socket.to(to).emit('meeting:offer', { offer, from: socket.id });
-    });
-    
-    socket.on('meeting:answer', ({ meetingId, answer, to }) => {
-      socket.to(to).emit('meeting:answer', { answer, from: socket.id });
-    });
-    
-    socket.on('meeting:ice-candidate', ({ meetingId, candidate, to }) => {
-      socket.to(to).emit('meeting:ice-candidate', { candidate, from: socket.id });
-    });
-    
     // Handle disconnection
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.user.name}`);

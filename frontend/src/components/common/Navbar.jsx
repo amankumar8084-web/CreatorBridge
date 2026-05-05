@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { HiHome, HiChatBubbleLeftRight, HiUsers, HiCalendarDays, HiUser, HiArrowRightOnRectangle, HiEllipsisVertical } from 'react-icons/hi2';
+import { HiHome, HiChatBubbleLeftRight, HiUsers, HiUser, HiArrowRightOnRectangle, HiEllipsisVertical } from 'react-icons/hi2';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -54,9 +54,6 @@ const Navbar = () => {
             <Link to="/chat" className="text-gray-700 hover:text-indigo-600 transition flex items-center gap-2">
               <HiChatBubbleLeftRight className="w-5 h-5" /> Chat
             </Link>
-            <Link to="/meetings" className="text-gray-700 hover:text-indigo-600 transition flex items-center gap-2">
-              <HiCalendarDays className="w-5 h-5" /> Meetings
-            </Link>
           </div>
 
           {/* Right side */}
@@ -98,9 +95,6 @@ const Navbar = () => {
                   </Link>
                   <Link to="/chat" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                     <HiChatBubbleLeftRight className="w-4 h-4" /> Chat
-                  </Link>
-                  <Link to="/meetings" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                    <HiCalendarDays className="w-4 h-4" /> Meetings
                   </Link>
                   <div className="border-t border-gray-100 my-1" />
                   <button

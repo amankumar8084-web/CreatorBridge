@@ -29,6 +29,18 @@ const userService = {
   searchUsers: async (filters) => {
     const response = await api.get('/users/search', { params: filters });
     return response.data.data;
+  },
+
+  updateAvatar: async (formData) => {
+    const response = await api.post('/users/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data.data;
+  },
+
+  removeAvatar: async () => {
+    const response = await api.delete('/users/avatar');
+    return response.data.data;
   }
 };
 

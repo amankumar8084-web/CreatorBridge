@@ -138,18 +138,6 @@ class NotificationService {
       );
     }
   }
-
-  async notifyMeetingInvite(meeting, userIds) {
-    for (const userId of userIds) {
-      await this.createNotification(
-        userId,
-        'meeting_invite',
-        'Meeting Invitation',
-        `${meeting.host} invited you to join "${meeting.name}"`,
-        { meetingId: meeting._id }
-      );
-    }
-  }
 }
 
 module.exports = new NotificationService();

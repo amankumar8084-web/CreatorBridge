@@ -30,20 +30,20 @@ const defaultStats = [
     iconBg: 'rgba(52,211,153,0.15)',
   },
   {
-    icon: HiVideoCamera,
-    number: '500+',
-    label: 'Meetings Hosted',
-    toast: '🎥 500+ collaborative sessions!',
-    iconColor: '#a78bfa',
-    iconBg: 'rgba(167,139,250,0.15)',
-  },
-  {
     icon: HiTrendingUp,
     number: '100+',
     label: 'Niches Covered',
     toast: '🌐 100+ niches worldwide!',
     iconColor: '#38bdf8',
     iconBg: 'rgba(56,189,248,0.15)',
+  },
+  {
+    icon: HiChat,
+    number: '24/7',
+    label: 'Live Support',
+    toast: '💬 Get help anytime in our forum!',
+    iconColor: '#f472b6',
+    iconBg: 'rgba(244,114,182,0.15)',
   },
 ];
 
@@ -134,8 +134,8 @@ const Footer = () => {
       links: [
         { label: 'Community Forum', to: '/forum' },
         { label: 'Real-time Chat', to: '/chat' },
-        { label: 'Video Meetings', to: '/meetings' },
         { label: 'Channel Discovery', to: '/discovery' },
+        { label: 'User Directory', to: '/discovery' },
       ],
     },
     {
@@ -272,14 +272,6 @@ const Home = () => {
             iconBg: 'rgba(52,211,153,0.15)',
           },
           {
-            icon: HiVideoCamera,
-            number: fmt(data.meetingsHosted || 500),
-            label: 'Meetings Hosted',
-            toast: `🎥 ${fmt(data.meetingsHosted || 500)} collaborative sessions!`,
-            iconColor: '#a78bfa',
-            iconBg: 'rgba(167,139,250,0.15)',
-          },
-          {
             icon: HiTrendingUp,
             number: fmt(data.nichesCovered || 100),
             label: 'Niches Covered',
@@ -287,6 +279,14 @@ const Home = () => {
             iconColor: '#38bdf8',
             iconBg: 'rgba(56,189,248,0.15)',
           },
+          {
+            icon: HiChat,
+            number: '24/7',
+            label: 'Community Support',
+            toast: '💬 Join our community forum for help!',
+            iconColor: '#f472b6',
+            iconBg: 'rgba(244,114,182,0.15)',
+          }
         ]);
       } catch (err) {
         console.error('Error fetching stats:', err);
@@ -314,19 +314,19 @@ const Home = () => {
       link: '/chat',
     },
     {
-      icon: HiVideoCamera,
-      title: 'Video Meetings',
-      description: 'Host channel reviews and collab sessions',
-      iconBg: '#f5f3ff',
-      iconColor: '#7c3aed',
-      link: '/meetings',
-    },
-    {
       icon: HiTrendingUp,
       title: 'Channel Discovery',
       description: 'Find and subscribe to growing channels',
       iconBg: '#e0f2fe',
       iconColor: '#0284c7',
+      link: '/discovery',
+    },
+    {
+      icon: HiUsers,
+      title: 'Collaborate',
+      description: 'Find creators for cross-promotion and growth',
+      iconBg: '#fef3c7',
+      iconColor: '#d97706',
       link: '/discovery',
     },
   ];
@@ -447,7 +447,7 @@ const Home = () => {
                 Explore the community
               </Link>
               <Link
-                to="/meetings"
+                to="/chat"
                 className="font-medium rounded-md transition-colors duration-200 hover:bg-white/10
                            text-[13px] sm:text-sm py-2.5 px-5 sm:py-[11px] sm:px-[26px]"
                 style={{
@@ -456,7 +456,7 @@ const Home = () => {
                   background: 'transparent',
                 }}
               >
-                How it works
+                Start Chatting
               </Link>
             </div>
           </motion.div>

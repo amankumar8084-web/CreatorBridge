@@ -152,23 +152,9 @@ export const SocketProvider = ({ children }) => {
     });
   }, []);
 
-  const sendTyping = useCallback((roomId, isTyping) => {
-    if (socketRef.current) {
-      socketRef.current.emit('chat:typing', { roomId, isTyping });
-    }
-  }, []);
 
-  const joinMeeting = useCallback((meetingId) => {
-    if (socketRef.current) {
-      socketRef.current.emit('meeting:join', meetingId);
-    }
-  }, []);
 
-  const sendMeetingSignal = useCallback((meetingId, signal, to) => {
-    if (socketRef.current) {
-      socketRef.current.emit('meeting:signal', { meetingId, signal, to });
-    }
-  }, []);
+
 
   return (
     <SocketContext.Provider value={{
@@ -178,10 +164,7 @@ export const SocketProvider = ({ children }) => {
       onlineUsers,
       joinChat,
       sendMessage,
-      sendChatRequest,
-      sendTyping,
-      joinMeeting,
-      sendMeetingSignal
+      sendChatRequest
     }}>
       {children}
     </SocketContext.Provider>

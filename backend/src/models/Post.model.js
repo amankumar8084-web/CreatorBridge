@@ -48,6 +48,10 @@ const postSchema = new mongoose.Schema({
   isLocked: {
     type: Boolean,
     default: false
+  },
+  attachment: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true,

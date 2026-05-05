@@ -12,7 +12,6 @@ import Navbar from './components/common/Navbar';
 import Home from './pages/Home';
 import Forum from './pages/Forum';
 import Discovery from './pages/Discovery';
-import Meetings from './pages/Meetings';
 import Chat from './pages/Chat';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
@@ -47,7 +46,7 @@ const AppContent = () => {
           <Route path="/forum" element={<ProtectedRoute><Forum /></ProtectedRoute>} />
           <Route path="/forum/:id" element={<ProtectedRoute><PostDetail /></ProtectedRoute>} />
           <Route path="/discovery" element={<ProtectedRoute><Discovery /></ProtectedRoute>} />
-          <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
+
           <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

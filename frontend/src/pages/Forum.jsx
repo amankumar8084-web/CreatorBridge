@@ -30,7 +30,10 @@ const Forum = () => {
         setShowForm(false);
         toast.success('Post created!');
       },
-      onError: () => toast.error('Failed to create post')
+      onError: (err) => {
+        const message = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Failed to create post';
+        toast.error(message);
+      }
     }
   );
 
@@ -44,7 +47,10 @@ const Forum = () => {
         setShowForm(false);
         toast.success('Post updated!');
       },
-      onError: () => toast.error('Failed to update post')
+      onError: (err) => {
+        const message = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Failed to update post';
+        toast.error(message);
+      }
     }
   );
 

@@ -15,7 +15,7 @@ const ChannelCard = ({ creator }) => {
     creator.followers?.includes(user?.id || user?._id)
   );
 
-  const isOnline = onlineUsers?.includes(creator._id || creator.id);
+  const isOnline = onlineUsers?.some(id => id.toString() === (creator._id || creator.id)?.toString());
 
   const followMutation = useMutation(
     () => userService.followUser(creator._id),

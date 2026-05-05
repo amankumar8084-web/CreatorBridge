@@ -21,7 +21,6 @@ const Chat = () => {
   const location = useLocation();
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState('');
-  const [connections, setConnections] = useState([]);
   const [messages, setMessages] = useState([]);
   const [showRequests, setShowRequests] = useState(false);
   const messagesEndRef = useRef(null);
@@ -40,36 +39,48 @@ const Chat = () => {
     () => userService.getProfile(currentUserId),
     {
       enabled: !!currentUserId,
-      staleTime: 30000,
-      onSuccess: (data) => {
-        const allConnections = [...(data.followers || []), ...(data.following || [])];
-        const uniqueConnections = [];
-        const seenIds = new Set();
-        
-        allConnections.forEach(conn => {
-          if (!seenIds.has(conn._id)) {
-            seenIds.add(conn._id);
-            uniqueConnections.push(conn);
-          }
-        });
-        
-        setConnections(uniqueConnections);
-      }
+      staleTime: 30000
     }
   );
+
+  // Use useMemo to derive unique connections from followers and following
+  const connections = useMemo(() => {
+    if (!profile) return [];
+    const all = [...(profile.followers || []), ...(profile.following || [])];
+    const seen = new Set();
+    return all.filter(conn => {
+      if (!conn) return false;
+      const id = conn._id || conn.id || (typeof conn === 'string' ? conn : null);
+      if (!id) return false;
+      const idStr = id.toString();
+      if (seen.has(idStr)) return false;
+      seen.add(idStr);
+      return true;
+    });
+  }, [profile]);
+
+  const handleSelectConnection = useCallback(async (connection) => {
+    try {
+      const dmData = await chatService.createDMRoom(connection._id);
+      setSelectedChat({
+        _id: dmData.roomId,
+        participants: [connection]
+      });
+    } catch (error) {
+      console.error("Error creating DM room:", error);
+      toast.error("Failed to open chat");
+    }
+  }, []);
 
   // Handle incoming requestUser from Profile page navigation
   useEffect(() => {
     if (location.state?.requestUser && connections.length > 0) {
       const reqUser = location.state.requestUser;
-      const alreadyInList = connections.some(c => c._id === reqUser._id);
-      if (!alreadyInList) {
-        setConnections(prev => [reqUser, ...prev]);
-      }
+      const alreadyInList = connections.some(c => (c._id || c) === reqUser._id);
       handleSelectConnection(reqUser);
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, connections.length]);
+  }, [location.state, connections.length, handleSelectConnection]);
   
   // Fetch pending chat requests
   const { data: chatRequests = [], refetch: refetchRequests } = useQuery(
@@ -155,23 +166,6 @@ const Chat = () => {
     
     const recipientId = selectedChat.participants[0]?._id;
     
-    // Check if user is a connection (follower or following)
-    const isFollower = profile?.followers?.some(f => (f._id || f) === recipientId);
-    const isFollowing = profile?.following?.some(f => (f._id || f) === recipientId);
-    const isConnection = isFollower || isFollowing;
-    
-    if (!isConnection) {
-      // Not a connection — send chat request instead
-      try {
-        const msg = await sendChatRequest(recipientId);
-        toast.success(msg || 'Chat request sent!');
-        setMessage('');
-      } catch (error) {
-        // Error already toasted in context
-      }
-      return;
-    }
-    
     // Optimistic UI Update
     const tempId = `temp_${Date.now()}`;
     const optimisticMsg = {
@@ -205,18 +199,7 @@ const Chat = () => {
     setMessage(e.target.value);
   };
 
-  const handleSelectConnection = useCallback(async (connection) => {
-    try {
-      const dmData = await chatService.createDMRoom(connection._id);
-      setSelectedChat({
-        _id: dmData.roomId,
-        participants: [connection]
-      });
-    } catch (error) {
-      console.error("Error creating DM room:", error);
-      toast.error("Failed to open chat");
-    }
-  }, []);
+
 
   const handleRespondRequest = async (requestId, action) => {
     try {
@@ -248,9 +231,10 @@ const Chat = () => {
   if (profileLoading) return <Loader />;
 
   // Check if recipient is a connection (memoized)
-  const recipientId = selectedChat?.participants?.[0]?._id;
-  const isRecipientConnection = profile?.followers?.some(f => (f._id || f) === recipientId) ||
-                                 profile?.following?.some(f => (f._id || f) === recipientId);
+  const recipient = selectedChat?.participants?.[0];
+  const recipientId = recipient?._id || recipient?.id || (typeof recipient === 'string' ? recipient : null);
+  const isRecipientConnection = profile?.followers?.some(f => (f?._id || f?.id || f) === recipientId) ||
+                                 profile?.following?.some(f => (f?._id || f?.id || f) === recipientId);
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 h-[calc(100vh-5rem)]">
@@ -324,8 +308,8 @@ const Chat = () => {
           <div className="flex-1 overflow-y-auto">
             {connections.length > 0 ? (
               connections.map((conn) => {
-                const isSelected = selectedChat?.participants?.some(p => p._id === conn._id);
-                const isOnline = onlineUsers.includes(conn._id);
+                const isSelected = selectedChat?._id && selectedChat.participants?.some(p => (p?._id || p?.id || p) === conn?._id);
+                const isOnline = Array.isArray(onlineUsers) && onlineUsers.some(id => id?.toString() === conn._id?.toString());
                 return (
                   <div
                     key={conn._id}
@@ -379,7 +363,7 @@ const Chat = () => {
                     <div className="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center">
                       <HiUser className="text-indigo-600 w-5 h-5" />
                     </div>
-                    {onlineUsers.includes(selectedChat.participants[0]?._id) && (
+                    {Array.isArray(onlineUsers) && onlineUsers.some(id => id?.toString() === selectedChat.participants[0]?._id?.toString()) && (
                       <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white shadow-sm animate-pulse" />
                     )}
                   </div>
@@ -388,7 +372,7 @@ const Chat = () => {
                       {selectedChat.participants[0]?.name}
                     </h3>
                     <p className="text-xs">
-                      {onlineUsers.includes(selectedChat.participants[0]?._id) ? (
+                      {Array.isArray(onlineUsers) && onlineUsers.some(id => id?.toString() === selectedChat.participants[0]?._id?.toString()) ? (
                         <span className="text-green-500 font-medium">Online</span>
                       ) : (
                         <span className="text-gray-400">Offline</span>
@@ -409,9 +393,10 @@ const Chat = () => {
                     <HiChatBubbleLeftRight className="w-12 h-12 mb-2 opacity-20" />
                     <p className="text-sm">No messages yet. Say hello! 👋</p>
                   </div>
-                ) : (
+                ) : (Array.isArray(messages) && messages.length > 0) ? (
                   <>
                     {messages.map((msg) => {
+                      if (!msg) return null;
                       const senderId = getSenderId(msg);
                       const isMine = senderId === currentUserId;
                       
@@ -448,10 +433,9 @@ const Chat = () => {
                         </motion.div>
                       );
                     })}
-
                     <div ref={messagesEndRef} />
                   </>
-                )}
+                ) : null}
               </div>
               
               {/* Input */}
@@ -462,7 +446,7 @@ const Chat = () => {
                     type="text"
                     value={message}
                     onChange={handleMessageChange}
-                    placeholder={isRecipientConnection ? 'Type a message...' : 'Send a chat request...'}
+                    placeholder="Type a message..."
                     className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                   />
                   <button

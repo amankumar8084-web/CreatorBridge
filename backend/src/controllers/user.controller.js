@@ -171,8 +171,8 @@ exports.uploadAvatar = async (req, res, next) => {
 exports.removeAvatar = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
-    // Reset to default avatar logic in model (or just set to null/empty and model function will handle)
-    user.avatar = undefined; 
+    // Explicitly set to a default avatar URL
+    user.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=4F46E5&color=fff`;
     await user.save();
 
     res.status(200).json({

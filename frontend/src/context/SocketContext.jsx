@@ -31,7 +31,7 @@ export const SocketProvider = ({ children }) => {
     }
     if (socketRef.current) return;
 
-    const socketUrl = SOCKET_URL.endsWith('/') ? SOCKET_URL.slice(0, -1) : SOCKET_URL;
+    const socketUrl = (SOCKET_URL || '').endsWith('/') ? SOCKET_URL.slice(0, -1) : (SOCKET_URL || window.location.origin);
 
     setConnectionState('connecting');
     const newSocket = io(socketUrl, {

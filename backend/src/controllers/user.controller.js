@@ -156,6 +156,8 @@ exports.uploadAvatar = async (req, res, next) => {
     }
 
     const user = await User.findById(req.user._id);
+    if (!user) return next(new AppError('User not found', 404));
+    
     user.avatar = req.file.path;
     await user.save();
 
@@ -164,6 +166,7 @@ exports.uploadAvatar = async (req, res, next) => {
       data: { avatar: user.avatar }
     });
   } catch (error) {
+    console.error('Upload Avatar Error:', error);
     next(error);
   }
 };
@@ -171,6 +174,8 @@ exports.uploadAvatar = async (req, res, next) => {
 exports.removeAvatar = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
+    if (!user) return next(new AppError('User not found', 404));
+    
     // Explicitly set to a default avatar URL
     user.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=4F46E5&color=fff`;
     await user.save();
@@ -180,6 +185,7 @@ exports.removeAvatar = async (req, res, next) => {
       data: { avatar: user.avatar }
     });
   } catch (error) {
+    console.error('Remove Avatar Error:', error);
     next(error);
   }
 };

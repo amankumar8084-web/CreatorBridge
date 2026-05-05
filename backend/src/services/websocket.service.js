@@ -76,7 +76,7 @@ const initSocket = (io) => {
           });
           
           if (!senderFollowsRecipient && !recipientFollowsSender && !acceptedRequest) {
-            console.log(`Access Denied: ${socket.user.name} -> ${recipientId}. No follow or accepted request.`);
+            console.error(`CHAT DENIED: ${socket.user.name} (${socket.user._id}) -> ${recipientId}. Reason: No follow or accepted request.`);
             if (callback) callback({ error: 'You can only message users you follow or who follow you. Send a chat request first.' });
             return;
           }

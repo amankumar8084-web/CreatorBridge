@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.post('/register', validateUser, authController.register);
 router.post('/login', authLimiter, authController.login);
+router.post('/google', authController.googleAuth);
 router.get('/me', protect, authController.getMe);
 
 module.exports = router;

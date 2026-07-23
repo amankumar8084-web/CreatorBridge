@@ -1,8 +1,11 @@
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require("uuid");
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User.model');
-const Follow = require('../models/Follow.model'); 
+const Follow = require('../models/Follow.model');
 const AppError = require('../utils/AppError');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 
 //  Generate token
@@ -114,6 +117,65 @@ exports.getMe = async (req, res, next) => {
         },
         followerCount,
         followingCount
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Google OAuth
+exports.googleAuth = async (req, res, next) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) {
+      return next(new AppError('Google credential is required', 400));
+    }
+
+    // Verify Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    // Find existing user or create new one
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+    if (user) {
+      // Link existing email account to Google if not already linked
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      // Create a new user from Google account
+      user = await User.create({
+        googleId,
+        email,
+        name,
+        avatar: picture,
+        sessionId: uuidv4(),
+      });
+    }
+
+    const newSessionId = uuidv4();
+    user.sessionId = newSessionId;
+    await user.save();
+
+    const token = signToken(user._id, newSessionId);
+
+    res.status(200).json({
+      status: 'success',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name || '',
+        niche: user.niche,
+        avatar: user.avatar
       }
     });
 

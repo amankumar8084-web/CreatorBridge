@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "axios": "^1.7.7",
     "buffer": "^6.0.3",
     "date-fns": "^2.30.0",

@@ -13,13 +13,20 @@ const userSchema = new mongoose.Schema({
   },
 
   sessionId: {
-  type: String,
-  default: null
-},
+    type: String,
+    default: null
+  },
+
+  googleId: {
+    type: String,
+    default: null,
+    index: true,
+    sparse: true
+  },
 
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: false,
     minlength: [8, 'Password must be at least 8 characters'],
     select: false
   },
@@ -51,7 +58,7 @@ const userSchema = new mongoose.Schema({
     index: true
   },
 
-   // Followers (users who follow this creator)
+  // Followers (users who follow this creator)
   followers: [
     {
       type: mongoose.Schema.ObjectId,
@@ -143,7 +150,7 @@ const userSchema = new mongoose.Schema({
 
 //  Hash password before saving
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
 
   const saltRounds = process.env.BCRYPT_COST || 12;
   this.password = await bcrypt.hash(this.password, saltRounds);

@@ -26,10 +26,21 @@ const startServer = async () => {
     await connectDB();
     await initRedis();
     initSocket(io);
-    
+
     const PORT = process.env.PORT || 4000;
     server.listen(PORT, () => {
       console.log(` Server running on port ${PORT}`);
+
+      // Self-ping every 5 minutes to keep Render from sleeping
+      const HEALTH_URL = process.env.RENDER_HEALTH_URL || 'https://creatorbridge.onrender.com/api/health';
+      setInterval(async () => {
+        try {
+          const res = await fetch(HEALTH_URL);
+          console.log(`[Health Ping] ${new Date().toISOString()} - Status: ${res.status}`);
+        } catch (err) {
+          console.error(`[Health Ping] Failed:`, err.message);
+        }
+      }, 5 * 60 * 1000); // every 5 minutes
     });
   } catch (error) {
     console.error('Failed to start server:', error);

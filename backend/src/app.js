@@ -44,7 +44,7 @@ app.use('/api/youtube', youtubeRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
 });
 
@@ -60,7 +60,7 @@ app.get('/api/stats', async (req, res) => {
     const postsShared = await Post.countDocuments();
 
     const nichesCovered = (await User.distinct('niche')).length;
-    
+
     res.json({
       activeCreators,
       postsShared,
